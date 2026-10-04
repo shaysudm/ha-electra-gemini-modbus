@@ -1,0 +1,235 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Electra GEMINI AC (Modbus)",
+        "description": "Connect to the Elfin EW11 gateway (Modbus TCP) of the air conditioner.\n\nUnofficial integration, provided as is, without any warranty. Use at your own risk.",
+        "data": {
+          "host": "EW11 IP address",
+          "port": "Port",
+          "name": "Name"
+        }
+      },
+      "sensors": {
+        "title": "IFeel room sensors",
+        "description": "The air conditioner's internal status cells can be read, so IFeel control is available: it lets a Home Assistant temperature sensor control the AC instead of the sensor in the unit. Choose the temperature sensors to offer for it. You can leave this empty and change it later in the options.",
+        "data": {
+          "ifeel_sensors": "Room sensors offered"
+        }
+      },
+      "no_slave1": {
+        "title": "IFeel control not available",
+        "description": "The connection works, but the air conditioner's internal status cells (Modbus unit 1) could not be read, or do not look as expected. Without them IFeel control is not available, and the compressor and coil entities stay unavailable; the rest of the integration works.\n\nIFeel control can be allowed manually in the integration's options (section \"Not recommended\", \"Allow IFeel control without coil protection\"). This is not recommended: it turns off the indoor coil protection and other safety checks, at your own risk.\n\nSubmit to finish the setup."
+      },
+      "reconfigure": {
+        "title": "Change the connection",
+        "description": "The address and port of the Elfin EW11 gateway. The new connection is checked first; the integration then reconnects (IFeel is handed back through the old connection first).",
+        "data": {
+          "host": "EW11 IP address",
+          "port": "Port"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot reach the AC through the gateway.",
+      "invalid_response": "The device answered, but not like an Electra GEMINI unit.",
+      "already_configured": "This gateway is already configured."
+    },
+    "abort": {
+      "already_configured": "This gateway is already configured.",
+      "reconfigure_successful": "The connection was changed."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options",
+        "description": "Unofficial integration, provided as is, without any warranty. Use at your own risk.",
+        "data": {
+          "scan_interval": "Polling interval (seconds)"
+        },
+        "sections": {
+          "ifeel": {
+            "name": "IFeel control",
+            "description": "IFeel control lets a Home Assistant temperature sensor control the AC instead of the sensor in the unit. Switch it on with the \"IFeel control\" switch and choose the room with the \"IFeel room sensor\" select on the device page. Tested in Cool and Heat. Not used in Dry and Fan: the AC uses its own sensor there. Auto is not supported. Experimental: use at your own risk.",
+            "data": {
+              "ifeel_sensors": "Room sensors offered",
+              "cold_tolerance": "Cold tolerance",
+              "hot_tolerance": "Hot tolerance",
+              "keepalive": "Keep-alive interval",
+              "min_off": "Minimum time between compressor stop and start in Cool",
+              "heat_min_off": "Minimum time between compressor stop and start in Heat",
+              "stale_minutes": "Room sensor silent for",
+              "coil_limit": "Coil freeze protection limit",
+              "heat_coil_limit": "Coil overheat protection limit in Heat",
+              "max_run": "Maximum compressor run time",
+              "remote_off_on_keeps": "Keep IFeel control when the remote turns the AC off and on",
+              "shabbat_pauses": "Keep IFeel control through Shabbat mode"
+            },
+            "data_description": {
+              "ifeel_sensors": "The temperature sensors that can be chosen in the \"IFeel room sensor\" select. To combine several rooms, create a \"Combine the state of several sensors\" helper and offer that.",
+              "cold_tolerance": "How far below the target the room must be before the AC is told to stop cooling (or to start heating).",
+              "hot_tolerance": "How far above the target the room must be before the AC is told to start cooling (or to stop heating).",
+              "keepalive": "How often IFeel is refreshed in the AC. IFeel switches itself off about 7 minutes after the last refresh; above about 210 seconds a single missed refresh lets it switch off until the next one.",
+              "min_off": "Recommended: the AC's own 8-minute timer. A shorter time lets the compressor start sooner after a stop; not recommended.",
+              "heat_min_off": "The AC has no 8-minute timer in Heat, so this is timed from the compressor stop Home Assistant saw (after a restart: from the first reading). The AC itself waits about 3 minutes.",
+              "stale_minutes": "IFeel control stops when the room sensor has not reported for this long.",
+              "coil_limit": "When the indoor coil stays at or below this temperature for a minute while the compressor runs (Cool and Heat), the compressor is stopped. Lowering this limit risks the indoor coil freezing (icing up), which blocks the airflow and can damage the unit. Do not go below 3 °C.",
+              "heat_coil_limit": "When the indoor coil reaches this temperature while heating, the compressor is stopped. The AC normally keeps its coil at or below about 61-62 °C by itself, so this is a backstop for a fault.",
+              "max_run": "The compressor is stopped after running this long without a break, as a backstop.",
+              "remote_off_on_keeps": "Off: turning the AC off or on with the remote switches IFeel control off. On: it pauses while the AC is off and resumes when the remote turns it on again in the same mode; turned on in another mode, IFeel control switches off. Turning the AC off and on from Home Assistant always pauses and resumes.",
+              "shabbat_pauses": "Off: Shabbat mode (from the remote or Home Assistant) switches IFeel control off. On: IFeel control pauses while Shabbat mode is on (the AC uses its own sensor and nothing is sent to it) and resumes when Shabbat mode ends."
+            }
+          },
+          "unsafe": {
+            "name": "Not recommended",
+            "description": "Use at your own risk.",
+            "data": {
+              "allow_without_coil_protection": "Allow IFeel control without coil protection",
+              "override_max_run": "Maximum compressor run time without coil protection"
+            },
+            "data_description": {
+              "allow_without_coil_protection": "NOT RECOMMENDED, AT YOUR OWN RISK. Lets IFeel control run when the indoor coil temperature cannot be read (a coil sensor fault, or a controller without the internal status cells). This turns off protection mechanisms: the coil protection, and without the internal cells also the check that IFeel is really active, the detection of IFeel problems and of the remote's IFeel, and the compressor-based start hold-back (a cautious timer is used instead). It is unknown whether the AC protects its indoor coil on its own: a long run may freeze the coil, block the airflow and damage the unit.",
+              "override_max_run": "While the setting above is what keeps IFeel control running, the compressor is stopped after running this long without a break."
+            }
+          }
+        }
+      }
+    }
+  },
+  "selector": {
+    "min_off": {
+      "options": {
+        "timer": "The AC's 8-minute timer (recommended)",
+        "3": "3 minutes",
+        "4": "4 minutes",
+        "5": "5 minutes",
+        "6": "6 minutes",
+        "7": "7 minutes",
+        "8": "8 minutes"
+      }
+    }
+  },
+  "entity": {
+    "climate": {
+      "ac": {
+        "state_attributes": {
+          "fan_mode": {
+            "state": {
+              "low": "Low",
+              "medium": "Medium",
+              "high": "High",
+              "auto": "Auto"
+            }
+          }
+        }
+      }
+    },
+    "sensor": {
+      "compressor_state": {
+        "name": "Compressor state",
+        "state": {
+          "running": "Running",
+          "start_pending": "Start pending",
+          "restart_lockout": "Stopped less than 8 min ago",
+          "ready": "Ready"
+        }
+      },
+      "coil_temperature": {
+        "name": "Coil temperature"
+      },
+      "board_room_temperature": {
+        "name": "Board room temperature"
+      },
+      "idu_fault": {
+        "name": "IDU fault"
+      },
+      "odu_fault": {
+        "name": "ODU fault"
+      },
+      "ifeel_source": {
+        "name": "IFeel source",
+        "state": {
+          "off": "Off",
+          "home_assistant": "Home Assistant",
+          "remote": "Remote",
+          "unknown": "Unknown",
+          "on": "On"
+        }
+      },
+      "remote_ifeel_temperature": {
+        "name": "Remote IFeel temperature"
+      },
+      "ifeel_status": {
+        "name": "IFeel control status",
+        "state": {
+          "off": "Off",
+          "active": "Active",
+          "holding_start": "Holding a start (8-minute timer)",
+          "coil_guard": "Coil protection",
+          "run_cap": "Run time limit",
+          "suspended_ac_off": "Suspended: AC off",
+          "suspended_fan": "Suspended: Fan mode",
+          "suspended_dry": "Suspended: Dry mode",
+          "suspended_shabbat": "Paused: Shabbat mode",
+          "stopped_sensor": "Stopped: room sensor problem",
+          "stopped_shabbat": "Stopped: Shabbat mode",
+          "stopped_remote_mode": "Stopped: mode changed at the remote",
+          "stopped_remote_ifeel": "Stopped: the remote's IFeel",
+          "stopped_value_not_kept": "Stopped: IFeel value not kept",
+          "stopped_sensor_removed": "Stopped: room sensor no longer available",
+          "refused_no_slave1": "Not possible: coil cannot be watched",
+          "refused_coil_fault": "Not possible: coil sensor fault",
+          "refused_auto": "Refused: Auto mode"
+        }
+      }
+    },
+    "binary_sensor": {
+      "compressor_running": {
+        "name": "Compressor running"
+      },
+      "idu_fault": {
+        "name": "IDU fault active"
+      },
+      "odu_fault": {
+        "name": "ODU fault active"
+      },
+      "alarm": {
+        "name": "Alarm"
+      },
+      "overflow": {
+        "name": "Overflow"
+      },
+      "defrost": {
+        "name": "Defrost"
+      },
+      "timer_active": {
+        "name": "Timer active"
+      }
+    },
+    "switch": {
+      "shabat_mode": {
+        "name": "Shabbat mode"
+      },
+      "sleep_mode": {
+        "name": "Sleep mode"
+      },
+      "ifeel_control": {
+        "name": "IFeel control"
+      }
+    },
+    "select": {
+      "ifeel_room_sensor": {
+        "name": "IFeel room sensor"
+      }
+    }
+  },
+  "exceptions": {
+    "auto_not_supported": {
+      "message": "Auto mode is not supported: on this unit it can freeze the indoor coil (see the README). Use Cool or Heat."
+    },
+    "in_auto": {
+      "message": "The AC is in Auto (set at the remote): choose Cool, Heat, Dry, Fan or Off first."
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "entity": {
+    "switch": {
+      "shabat_mode": {
+        "default": "mdi:candelabra",
+        "state": {
+          "on": "mdi:candelabra-fire"
+        }
+      },
+      "sleep_mode": {
+        "default": "mdi:sleep-off",
+        "state": {
+          "on": "mdi:sleep"
+        }
+      },
+      "ifeel_control": {
+        "default": "mdi:thermostat-auto",
+        "state": {
+          "off": "mdi:thermostat"
+        }
+      }
+    },
+    "binary_sensor": {
+      "timer_active": {
+        "default": "mdi:timer-off-outline",
+        "state": {
+          "on": "mdi:timer-outline"
+        }
+      }
+    },
+    "select": {
+      "ifeel_room_sensor": {
+        "default": "mdi:home-thermometer"
+      }
+    },
+    "sensor": {
+      "ifeel_status": {
+        "default": "mdi:thermostat-box"
+      },
+      "ifeel_source": {
+        "default": "mdi:remote"
+      }
+    }
+  }
+}

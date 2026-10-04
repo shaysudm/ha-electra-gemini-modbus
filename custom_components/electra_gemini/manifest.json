@@ -1,0 +1,12 @@
+{
+  "domain": "electra_gemini",
+  "name": "Electra GEMINI AC (Modbus)",
+  "codeowners": ["@shaysudm"],
+  "config_flow": true,
+  "documentation": "https://github.com/shaysudm/ha-electra-gemini-modbus",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/shaysudm/ha-electra-gemini-modbus/issues",
+  "requirements": [],
+  "version": "0.6.1"
+}
