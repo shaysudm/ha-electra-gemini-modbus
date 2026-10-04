@@ -8,6 +8,13 @@ Home Assistant temperature sensor control the AC through its IFeel input.
 Register map: [`docs/REGISTER_MAP.md`](docs/REGISTER_MAP.md). IFeel control design:
 [`docs/IFEEL_DESIGN.md`](docs/IFEEL_DESIGN.md).
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/shaysudm/ha-electra-gemini-modbus/main/docs/images/dashboard.jpg"
+       alt="Home Assistant's thermostat card for the AC, with IFeel control and the room sensor below it" width="380">
+  <br>
+  <em>An example card: Home Assistant's thermostat card, with IFeel control and the room sensor (Mushroom cards).</em>
+</p>
+
 ## Install
 
 **With HACS:** HACS -> the three dots -> Custom repositories -> add this repository's URL with the type "Integration",
