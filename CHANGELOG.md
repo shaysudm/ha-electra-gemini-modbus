@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.2
+
+* The integration has its own icon in Home Assistant (shown on the integrations and device pages after a restart; Home
+  Assistant 2026.3 or later). The README has "Open in HACS" and "Add integration" buttons.
+
 ## 0.6.1
 
 * The device page shows the controller board: its part number as the model ID, its barcode as the serial number, and

@@ -17,13 +17,21 @@ Register map: [`docs/REGISTER_MAP.md`](docs/REGISTER_MAP.md). IFeel control desi
 
 ## Install
 
-**With HACS:** HACS -> the three dots -> Custom repositories -> add this repository's URL with the type "Integration",
-then download "Electra GEMINI AC (Modbus)" and restart Home Assistant.
+**With HACS:**
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=shaysudm&repository=ha-electra-gemini-modbus&category=integration)
+
+Or in HACS: the three dots -> Custom repositories -> add this repository's URL with the type "Integration". Then
+download "Electra GEMINI AC (Modbus)", restart Home Assistant and continue with step 3 below.
 
 **Manually:**
 1. Copy `custom_components/electra_gemini/` to `/config/custom_components/electra_gemini/` (Advanced SSH add-on or File editor).
 2. Restart Home Assistant.
-3. Settings -> Devices & services -> Add integration -> "Electra GEMINI AC (Modbus)". Enter the EW11 IP address (no default);
+3. Add the integration:
+
+   [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=electra_gemini)
+
+   or Settings -> Devices & services -> Add integration -> "Electra GEMINI AC (Modbus)". Enter the EW11 IP address (no default);
    port 8899 and the name "AC" are pre-filled. The Modbus unit ID (160) is fixed and not configurable.
    Note: with the name "AC" the climate entity becomes `climate.ac`; if an entity of that name already exists (for
    example an infrared integration for the same AC), Home Assistant uses `climate.ac_2`, so choose another name.
