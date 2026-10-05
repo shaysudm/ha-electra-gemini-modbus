@@ -57,6 +57,13 @@ tried: communication through it was unreliable with the settings used; this was 
 
 ## Entities
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/shaysudm/ha-electra-gemini-modbus/main/docs/images/device_page.jpg"
+       alt="The device page: device info, controls, the IFeel control status and the diagnostic entities" width="560">
+  <br>
+  <em>The device page (serial numbers replaced by examples).</em>
+</p>
+
 **Device info:** the device is the controller board (GEMINI IDU). With the internal cells (unit 1) usable, its model ID
 (part number, e.g. `1A0058`), serial number (barcode) and hardware version (revision) come from the identity block
 `0x4040`-`0x4059`, read once at startup; the indoor unit's product and serial numbers are added to the hardware version,
