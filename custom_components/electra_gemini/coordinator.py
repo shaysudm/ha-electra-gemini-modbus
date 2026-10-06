@@ -7,7 +7,7 @@ import asyncio
 import logging
 import time
 from collections import deque
-from dataclasses import dataclass, replace
+from dataclasses import asdict, dataclass, replace
 from datetime import timedelta
 from pathlib import Path
 from typing import Any
@@ -15,7 +15,7 @@ from typing import Any
 from homeassistant.components import persistent_notification
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT, STATE_UNAVAILABLE, STATE_UNKNOWN, UnitOfTemperature
-from homeassistant.core import Event as HassEvent, EventStateChangedData, HomeAssistant, State, callback
+from homeassistant.core import Context, Event as HassEvent, EventStateChangedData, HomeAssistant, State, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.storage import Store
@@ -160,6 +160,7 @@ class ElectraCoordinator(DataUpdateCoordinator[AcData]):
         self._coil_implausible = False
         self.last_active_mode = MODE_COOL
         self.identity: Identity | None = None  # read once at setup (device info)
+        self._last_fast_regs: list[int] | None = None  # the last fast read recorded in the history
         self._in_auto = False  # for the log line when the unit is seen entering Auto
         self._writer = WriteCoalescer(self._apply_write, MIN_WRITE_INTERVAL)
         # IFeel control
@@ -295,6 +296,29 @@ class ElectraCoordinator(DataUpdateCoordinator[AcData]):
             "blocks": blocks,
         }
 
+    # -- the history: who asked for what --------------------------------------------------------------------------
+
+    def record_request(self, entity_id: str | None, action: str, details: dict[str, Any], context: Context | None) -> None:
+        """A request from an entity (a service call), with where it came from."""
+        self.debug.record({"request": action, "entity": entity_id, **details, "origin": self._origin(context)})
+
+    def record_refusal(self, entity_id: str | None, action: str, reason: str) -> None:
+        self.debug.record({"refused": action, "entity": entity_id, "reason": reason})
+
+    def _origin(self, context: Context | None) -> dict[str, Any]:
+        """Who caused a request: an automation or a script (by entity), a user (no name: diagnostics may be shared),
+        or Home Assistant itself."""
+        if context is None:
+            return {"by": "unknown"}
+        for state in self.hass.states.async_all(("automation", "script")):
+            if state.context.id in (context.id, context.parent_id):
+                return {"by": state.domain, "entity": state.entity_id}
+        if context.user_id:
+            return {"by": "user"}
+        if context.parent_id:
+            return {"by": "other", "note": "caused by another event"}
+        return {"by": "home_assistant"}
+
     def _slave1_usable(self) -> bool:
         return self._internal_failures < INTERNAL_MAX_FAILURES
 
@@ -350,7 +374,12 @@ class ElectraCoordinator(DataUpdateCoordinator[AcData]):
                 status = await self._read_status()
             except (ModbusError, ValueError) as err:
                 _LOGGER.debug("Fast status read failed: %s", err)
+                self.debug.record({"phase": "fast", "error": str(err)})
             else:
+                regs = self._raw.get("s160")
+                if regs != self._last_fast_regs:  # only the fast reads where something changed
+                    self._last_fast_regs = regs
+                    self.debug.record({"phase": "fast", "s160": regs})
                 actions = self.ifeel.update(Observation(status, self._internal, self._slave1_usable(), fresh=False))
                 if self.data is not None:
                     self.data = self._build(status)  # without rescheduling the normal polls
@@ -450,6 +479,8 @@ class ElectraCoordinator(DataUpdateCoordinator[AcData]):
         try:
             await self._writer.submit(request)
         except (ModbusError, ValueError) as err:
+            asked = {k: v for k, v in asdict(request).items() if v is not None}
+            self.debug.record({"request_failed": str(err), "request": asked})
             raise HomeAssistantError(f"Cannot control the AC: {err}") from err
 
     async def _apply_write(self, request: WriteRequest) -> None:
@@ -509,6 +540,7 @@ class ElectraCoordinator(DataUpdateCoordinator[AcData]):
         try:
             await self._run_actions(self.ifeel.request_enable())
         except IFeelRefused as err:
+            self.record_refusal(None, "ifeel_control_on", f"{err} ({err.status})")
             self.async_update_listeners()
             raise HomeAssistantError(f"IFeel control cannot be switched on: {err}") from err
         finally:

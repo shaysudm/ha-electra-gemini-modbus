@@ -65,9 +65,11 @@ class ElectraSwitch(ElectraEntity, SwitchEntity):
         return self.entity_description.is_on_fn(self.coordinator.data)
 
     async def async_turn_on(self, **kwargs: Any) -> None:
+        self._request("turn_on")
         await self.coordinator.async_set(**{self.entity_description.request_key: True})
 
     async def async_turn_off(self, **kwargs: Any) -> None:
+        self._request("turn_off")
         await self.coordinator.async_set(**{self.entity_description.request_key: False})
 
 
@@ -87,7 +89,9 @@ class IFeelControlSwitch(ElectraEntity, SwitchEntity):
         return {"status": self.coordinator.ifeel.status}
 
     async def async_turn_on(self, **kwargs: Any) -> None:
+        self._request("turn_on")
         await self.coordinator.async_ifeel_enable()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
+        self._request("turn_off")
         await self.coordinator.async_ifeel_disable()

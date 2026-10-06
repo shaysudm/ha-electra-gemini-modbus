@@ -161,14 +161,17 @@ class ElectraClimate(ElectraEntity, ClimateEntity):
 
     def _refuse_auto(self, hvac_mode: HVACMode | None) -> None:
         if hvac_mode == HVACMode.AUTO:
+            self._refused("hvac_mode auto", "auto_not_supported")
             raise ServiceValidationError(translation_domain=DOMAIN, translation_key="auto_not_supported")
 
     def _refuse_in_auto(self) -> None:
         """Set at the remote: no setpoint or fan changes in Auto (they would write Auto again; owner, 2026-10-04)."""
         if self._status.mode == MODE_AUTO:
+            self._refused("setpoint / fan in Auto", "in_auto")
             raise ServiceValidationError(translation_domain=DOMAIN, translation_key="in_auto")
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
+        self._request("set_hvac_mode", hvac_mode=hvac_mode)
         self._refuse_auto(hvac_mode)
         await self.coordinator.async_set(mode=HVAC_TO_MODE[hvac_mode])
 
@@ -177,6 +180,7 @@ class ElectraClimate(ElectraEntity, ClimateEntity):
         hvac_mode = kwargs.get("hvac_mode")
         if temperature is None and hvac_mode is None:
             return
+        self._request("set_temperature", temperature=temperature, hvac_mode=hvac_mode)
         self._refuse_auto(hvac_mode)
         if hvac_mode is None:
             self._refuse_in_auto()
@@ -186,11 +190,14 @@ class ElectraClimate(ElectraEntity, ClimateEntity):
         )
 
     async def async_set_fan_mode(self, fan_mode: str) -> None:
+        self._request("set_fan_mode", fan_mode=fan_mode)
         self._refuse_in_auto()
         await self.coordinator.async_set(fan=NAME_TO_FAN[fan_mode])
 
     async def async_turn_on(self) -> None:
+        self._request("turn_on")
         await self.coordinator.async_set(mode=self.coordinator.last_active_mode)
 
     async def async_turn_off(self) -> None:
+        self._request("turn_off")
         await self.coordinator.async_set(mode=MODE_OFF)

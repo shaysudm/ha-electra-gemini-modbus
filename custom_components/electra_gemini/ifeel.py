@@ -198,6 +198,7 @@ class IFeelController:
         self.override_in_effect = False
         self._shabbat_cleanup = 0
         self._shabbat_paused = False  # Shabbat mode with config.shabbat_pauses: IFeel is off, nothing is written
+        self._decisions: list[Event] = []  # on / off decisions since the last call, for the history
         self._off_mode: int | None = None  # the mode the AC was in before it was turned off (None: not known)
         self._last_status: str | None = None
 
@@ -259,7 +260,7 @@ class IFeelController:
             self._sensor_bad_since = None
         if self._obs is None or not self.enabled:
             return []
-        return self._step(self._obs, sensor_only=True)
+        return self._with_decisions(self._step(self._obs, sensor_only=True))
 
     def expect_own_settings(self, mode: int | None, fan: int | None, setpoint: int | None) -> None:
         """The integration is about to write these settings: a change to them is not remote use."""
@@ -273,7 +274,12 @@ class IFeelController:
 
     def update(self, obs: Observation) -> list[Action]:
         """One poll (fresh) or the readback after a settings write."""
-        return self._step(obs)
+        return self._with_decisions(self._step(obs))
+
+    def _with_decisions(self, acts: list[Action]) -> list[Action]:
+        """The on / off decisions made meanwhile go first (they are events: only recorded)."""
+        decisions, self._decisions = self._decisions, []
+        return decisions + acts
 
     def request_enable(self) -> list[Action]:
         """The user switches IFeel control on (also used to restore it after a restart). Raises IFeelRefused."""
@@ -318,7 +324,7 @@ class IFeelController:
             self._phase = _ACTIVE
             if not paused:
                 acts += self._enable_sequence(obs, "enable")
-        return acts + self._state_event()
+        return self._with_decisions(acts + self._state_event())
 
     def request_disable(self) -> list[Action]:
         """The user switches IFeel control off."""
@@ -702,6 +708,15 @@ class IFeelController:
     # -- thermostat and values ------------------------------------------------------------------------------------
 
     def _evaluate_command(self, st: Status) -> None:
+        before = self.command
+        self._decide(st)
+        if self.command != before:
+            self._decisions.append(Event("decision", {
+                "command": self.command, "previous": before, "room": self._last_temp, "setpoint": st.setpoint,
+                "mode": st.mode,
+            }))  # fmt: skip
+
+    def _decide(self, st: Status) -> None:
         temp, sp = self._last_temp, st.setpoint
         if temp is None or sp is None:
             return

@@ -2,10 +2,13 @@
 
 ## 0.6.3
 
-* **Diagnostics for problem reports:** "Download diagnostics" now includes the last 30 minutes of polls (with their raw
-  registers), writes, connection and IFeel events, and a snapshot of every register of the board's unit 1 (read when
-  downloading, read only), so a problem can be analysed from one file. Serial numbers and the gateway address are left
-  out. IFeel events in the history carry the registers they were based on.
+* **Diagnostics for problem reports:** "Download diagnostics" now includes the last 30 minutes of what the integration
+  saw and did, and a snapshot of every register of the board's unit 1 (read when downloading, read only), so a problem
+  can be analysed from one file. The 30 minutes hold: every poll with its raw registers, the once-a-second reads where
+  something changed, every write with its reason, every request with where it came from (a user, an automation or a
+  script by name, no user names), refusals with their reason, IFeel control's on / off decisions with the room
+  temperature, its events with the registers behind them, and connection events. Serial numbers and the gateway
+  address are left out.
 * A "Problem report" form for GitHub issues, and a "Reporting a problem" section in the README.
 
 ## 0.6.2

@@ -52,4 +52,5 @@ class IFeelRoomSensorSelect(ElectraEntity, SelectEntity):
         return {"entity_id": self.coordinator.room_sensor}
 
     async def async_select_option(self, option: str) -> None:
+        self._request("select_option", entity_chosen=self._names().get(option))
         await self.coordinator.async_set_room_sensor(self._names()[option])

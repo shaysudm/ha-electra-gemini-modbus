@@ -221,13 +221,14 @@ handing IFeel back; unloading it or stopping Home Assistant hands back to the un
 The integration always keeps the last 30 minutes of what it read and wrote in memory. When something goes wrong:
 
 1. Within 30 minutes, go to Settings -> Devices & services -> Electra GEMINI AC (Modbus) -> the three dots ->
-   **Download diagnostics**. Besides the settings and IFeel control's state, the file holds those 30 minutes (every poll
-   with its raw registers, every write, connection and IFeel events) and a snapshot of every register of the board's
+   **Download diagnostics**. Besides the settings and IFeel control's state, the file holds those 30 minutes (the
+   registers read, every write and its reason, every request and whether a user, an automation or a script made it,
+   refusals, IFeel control's decisions and events, connection events) and a snapshot of every register of the board's
    unit 1, read when you download it (read only; about 10-20 seconds).
 2. Open an issue on GitHub ("Problem report") and attach the file. The form asks a few things only you can check, such
    as the DIP switch J2 and whether a wall controller or an infrared device is around.
 
-The gateway address and the serial numbers are left out of the file.
+The gateway address, the serial numbers and user names are left out of the file.
 
 ## Development
 

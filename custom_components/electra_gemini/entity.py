@@ -48,6 +48,13 @@ class ElectraEntity(CoordinatorEntity[ElectraCoordinator]):
             **_identity_info(coordinator.identity),
         )
 
+    def _request(self, action: str, **details) -> None:
+        """Record a service call in the history, with where it came from (the context Home Assistant set for it)."""
+        self.coordinator.record_request(self.entity_id, action, details, self._context)
+
+    def _refused(self, action: str, reason: str) -> None:
+        self.coordinator.record_refusal(self.entity_id, action, reason)
+
     @property
     def available(self) -> bool:
         if not super().available:

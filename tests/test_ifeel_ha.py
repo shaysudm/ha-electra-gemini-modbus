@@ -423,3 +423,51 @@ async def test_ifeel_control_is_refused_in_auto(hass, entry, sim):
         await switch(hass, "turn_on")
     assert state(hass, STATUS).state == "refused_auto" and state(hass, SWITCH).state == STATE_OFF
     assert ifeel_writes(sim) == []
+
+
+# -- the history (diagnostics): requests with their origin, refusals, fast reads, decisions ---------------------------
+
+
+def history(entry, key):
+    import json
+
+    return [json.loads(line) for _, line in entry.runtime_data.debug.ring if f'"{key}"' in line]
+
+
+async def test_history_records_requests_and_where_they_came_from(hass, entry, sim, hass_admin_user):
+    from homeassistant.core import Context
+
+    user = Context(user_id=hass_admin_user.id)
+    await hass.services.async_call(
+        "climate", "set_temperature", {"entity_id": CLIMATE, "temperature": 23}, blocking=True, context=user
+    )
+    by_automation = Context()
+    hass.states.async_set("automation.evening_cooling", "on", context=by_automation)
+    await hass.services.async_call(
+        "climate", "set_fan_mode", {"entity_id": CLIMATE, "fan_mode": "low"}, blocking=True, context=by_automation
+    )
+    requests = history(entry, "request")
+    assert requests[0]["request"] == "set_temperature" and requests[0]["temperature"] == 23
+    assert requests[0]["origin"] == {"by": "user"}  # no user name: diagnostics may be shared
+    assert requests[1]["origin"] == {"by": "automation", "entity": "automation.evening_cooling"}
+    assert any(r.get("why") == "settings" for r in history(entry, "write"))
+
+
+async def test_history_records_refusals(hass, entry, sim):
+    sim.set_registers(mode=3)
+    await entry.runtime_data.async_refresh()
+    with pytest.raises(HomeAssistantError):
+        await switch(hass, "turn_on")
+    refused = history(entry, "refused")
+    assert refused and refused[-1]["refused"] == "ifeel_control_on" and "refused_auto" in refused[-1]["reason"]
+
+
+async def test_history_records_fast_reads_that_changed_and_decisions(hass, entry, sim):
+    await switch(hass, "turn_on")
+    await asyncio.sleep(1.5)
+    sim.set_registers(setpoint=26)  # a change the fast reads see
+    await asyncio.sleep(1.5)
+    fast = history(entry, "phase")
+    assert [r for r in fast if r.get("phase") == "fast"]
+    decisions = [r for r in history(entry, "event") if r.get("event") == "decision"]
+    assert decisions and decisions[0]["command"] == "on" and decisions[0]["room"] == 25.2
