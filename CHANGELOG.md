@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.3
+
+* **Diagnostics for problem reports:** "Download diagnostics" now includes the last 30 minutes of polls (with their raw
+  registers), writes, connection and IFeel events, and a snapshot of every register of the board's unit 1 (read when
+  downloading, read only), so a problem can be analysed from one file. Serial numbers and the gateway address are left
+  out. IFeel events in the history carry the registers they were based on.
+* A "Problem report" form for GitHub issues, and a "Reporting a problem" section in the README.
+
 ## 0.6.2
 
 * The integration has its own icon in Home Assistant (shown on the integrations and device pages after a restart; Home

@@ -1,0 +1,70 @@
+name: Problem report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! The most useful thing you can attach is the integration's **diagnostics file**:
+        reproduce the problem, then **within 30 minutes** go to Settings -> Devices & services -> Electra GEMINI AC
+        (Modbus) -> the three dots -> **Download diagnostics**, and attach the file below. It holds the last 30
+        minutes of what the integration read and wrote, and a snapshot of the controller board's registers. The
+        gateway address and the serial numbers are left out of it; have a look before attaching it if you like.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+      description: Include the time it happened, and what you did just before (in Home Assistant or with the remote).
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics file
+      description: Drag the downloaded diagnostics file here.
+    validations:
+      required: true
+  - type: dropdown
+    id: j2
+    attributes:
+      label: DIP switch J2 on the controller board
+      description: See docs/WIRING.md. It must be ON (MODBUS) for the integration.
+      options:
+        - ON (MODBUS)
+        - OFF (wired wall controller, RCW)
+        - I don't know
+    validations:
+      required: true
+  - type: dropdown
+    id: wall_controller
+    attributes:
+      label: Is a wired wall controller connected to the board?
+      options:
+        - "No"
+        - "Yes"
+        - I don't know
+    validations:
+      required: true
+  - type: textarea
+    id: infrared
+    attributes:
+      label: Remotes and infrared devices
+      description: >-
+        Is the AC's remote in view of the unit? Is its own IFeel on? Are there infrared blasters (for example Broadlink
+        or SmartIR) or other Electra / Airwell remotes nearby?
+  - type: input
+    id: ac_model
+    attributes:
+      label: AC model (indoor and outdoor unit, from the nameplates)
+  - type: input
+    id: gateway
+    attributes:
+      label: RS-485 gateway (model, and its protocol setting)
+      placeholder: e.g. Elfin EW11, protocol Modbus
+  - type: input
+    id: versions
+    attributes:
+      label: Integration version and Home Assistant version
+      placeholder: e.g. 0.6.3 / 2026.10.0
+    validations:
+      required: true

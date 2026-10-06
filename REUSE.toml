@@ -2,6 +2,6 @@
 version = 1
 
 [[annotations]]
-path = ["**/*.json", "**/*.md", "**/*.xml", "**/*.jpg", "**/*.png", "REUSE.toml", ".gitignore", "pytest.ini"]
+path = ["**/*.json", "**/*.md", "**/*.xml", "**/*.jpg", "**/*.png", "**/*.yml", "REUSE.toml", ".gitignore", "pytest.ini"]
 SPDX-FileCopyrightText = "2026 shaysudm"
 SPDX-License-Identifier = "AGPL-3.0-or-later"

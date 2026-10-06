@@ -213,6 +213,39 @@ async def test_diagnostics(hass, entry):
     result = await async_get_config_entry_diagnostics(hass, entry)
     assert result["entry"]["host"] == "**REDACTED**"
     assert result["ifeel"]["status"] == "off" and result["debug_log"]["recording"] is False
+    # the identity without serial numbers
+    assert result["identity"] == {
+        "board_part": "1A0058", "board_revision": "009", "idu_product": "857071",
+        "board_serial_read": True, "idu_serial_read": True,
+    }
+    assert "A0B12345678" not in str(result) and "1234567890" not in str(result)
+    # the last 30 minutes: the polls with their raw registers
+    polls = [r for r in result["history"] if r.get("phase") == "poll"]
+    assert polls and "s160" in polls[-1] and "blk4801" in polls[-1]
+    # the full unit-1 snapshot: every address of the scan, the serial characters masked
+    snap = result["slave1_snapshot"]
+    values = {int(b["address"], 16) + i: v for b in snap["blocks"] for i, v in enumerate(b.get("values", []))}
+    assert not [b for b in snap["blocks"] if "error" in b]
+    assert len(values) == 1877
+    assert all(values[a] is None for a in list(range(0x4040, 0x4046)) + list(range(0x4052, 0x4057)))
+    assert values[0x4048] == 0x4131  # the part number stays ("1A")
+    assert values[0x4801] == 0x0800 and values[0x40D9] == 0xFFFF
+
+
+async def test_diagnostics_without_unit1_does_not_hold_up(hass, entry, sim):
+    from custom_components.electra_gemini.diagnostics import async_get_config_entry_diagnostics
+
+    sim.internal_error = 2  # unit 1 answers every read with an exception
+    result = await async_get_config_entry_diagnostics(hass, entry)
+    blocks = result["slave1_snapshot"]["blocks"]
+    assert len(blocks) == 6  # two failed reads and the skipped rest, in each of the two ranges
+    assert all("error" in b for b in blocks)
+
+
+async def test_ifeel_events_carry_the_raw_registers(hass, entry, sim):
+    await switch(hass, "turn_on")
+    events = [r for r in entry.runtime_data.debug.ring if '"event": "state"' in r[1]]
+    assert events and '"raw"' in events[-1][1] and '"s160"' in events[-1][1]
 
 
 # -- fast reads, lost values (docs/IFEEL_DESIGN.md, "Fast status reads and lost values") ---------------------------

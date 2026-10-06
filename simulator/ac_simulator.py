@@ -139,7 +139,7 @@ class AcSimulator:
                 return None
             if self.internal_error is not None:
                 return self.internal_error
-            if not (0x4000 <= last <= 0x40D8 or 0x47FF <= last <= 0x4853):
+            if not (0x4000 <= last <= 0x46FF or 0x47FF <= last <= 0x4853):
                 return 2
             room = self.regs[0x3303]
             mode = self.regs[0x3300]
@@ -158,7 +158,8 @@ class AcSimulator:
                 cells[a] = (0x4828, 0, 0x4001)[a - 0x4850] if marker else 0xFFFF
             cells |= IDENTITY  # the identity block as logged on the real unit
             cells |= self.internal_cells
-            return [cells.get(a, 0) for a in range(address, address + count)]
+            # filler as on the real unit: 0xFFFF in the erased area 0x40D9-0x444B, 0 elsewhere
+            return [cells.get(a, 0xFFFF if 0x40D9 <= a <= 0x444B else 0) for a in range(address, address + count)]
         return None
 
     def write(self, unit: int, fc: int, address: int, values: list[int]) -> int | None:

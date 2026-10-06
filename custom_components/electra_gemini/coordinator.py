@@ -60,10 +60,12 @@ from .ifeel import (
     SensorReading,
     Write,
 )
-from .modbus import ModbusError, ModbusTcpClient, ModbusTimeout
+from .modbus import MAX_READ_COUNT, ModbusError, ModbusTcpClient, ModbusTimeout
 from .registers import (
     IDENTITY_ADDRESS,
     IDENTITY_COUNT,
+    SERIAL_ADDRESSES,
+    SNAPSHOT_RANGES,
     INTERNAL_ADDRESS,
     INTERNAL_COUNT,
     MARKER_ADDRESS,
@@ -256,6 +258,42 @@ class ElectraCoordinator(DataUpdateCoordinator[AcData]):
             self.identity = parse_identity(regs)
         except (ModbusError, ValueError) as err:
             _LOGGER.debug("Identity block not read: %s", err)
+
+    async def async_slave1_snapshot(self) -> dict[str, Any]:
+        """For diagnostics: read every unit-1 address that answered in the full scan (read only), the serial-number
+        characters masked (null). Two failed reads in a row skip the rest of a range (a board without unit 1, or with
+        a different layout, must not hold the download up)."""
+        started = time.monotonic()
+        blocks: list[dict[str, Any]] = []
+        for first, last in SNAPSHOT_RANGES:
+            failures = 0
+            address = first
+            while address <= last:
+                count = min(MAX_READ_COUNT, last - address + 1)
+                try:
+                    values = await self._client.read_holding_registers(INTERNAL_UNIT_ID, address, count)
+                except ModbusError as err:
+                    blocks.append({"address": f"0x{address:04X}", "count": count, "error": str(err)})
+                    failures += 1
+                    if failures >= 2 and address + count <= last:
+                        blocks.append({
+                            "address": f"0x{address + count:04X}", "count": last - address - count + 1,
+                            "error": "skipped after two failed reads in a row",
+                        })  # fmt: skip
+                        break
+                else:
+                    failures = 0
+                    blocks.append({
+                        "address": f"0x{address:04X}",
+                        "values": [None if address + i in SERIAL_ADDRESSES else v for i, v in enumerate(values)],
+                    })  # fmt: skip
+                address += count
+        return {
+            "ranges": [f"0x{first:04X}-0x{last:04X}" for first, last in SNAPSHOT_RANGES],
+            "masked": "serial-number characters (0x4040-0x4045, 0x4052-0x4056) are null",
+            "duration_s": round(time.monotonic() - started, 1),
+            "blocks": blocks,
+        }
 
     def _slave1_usable(self) -> bool:
         return self._internal_failures < INTERNAL_MAX_FAILURES
@@ -539,7 +577,8 @@ class ElectraCoordinator(DataUpdateCoordinator[AcData]):
         self.async_update_listeners()
 
     def _ifeel_event(self, event: Event) -> None:
-        self.debug.event(event.kind, event.data)
+        # with the last raw reads, so that a report shows what the decision was based on
+        self.debug.event(event.kind, {**event.data, "raw": dict(self._raw)})
         if event.kind == "check_now":
             self._check_now = True
         elif event.kind == "value_lost":
