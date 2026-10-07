@@ -6,6 +6,8 @@ See docs/REGISTER_MAP.md. Control/status registers live on unit 160 (0xA0), the 
 """
 from __future__ import annotations
 
+import re
+
 from dataclasses import dataclass, field, replace
 
 # --- unit 160 -------------------------------------------------------------------------------------------------------
@@ -197,14 +199,18 @@ def parse_internal(regs: list[int], room_temp: int | None = None, mode: int | No
 
 IDENTITY_ADDRESS = 0x4040
 IDENTITY_COUNT = 26  # read in two parts (at most 22 registers per read)
-# (first register, registers): ASCII, two characters per register, the LOW byte first
-_IDENTITY_FIELDS = {
-    "board_serial": (0x4040, 6),  # the controller board's barcode, after a leading length/type character ("0")
-    "board_part": (0x4048, 3),  # its part number, e.g. 1A0058
-    "board_revision": (0x4050, 2),  # its hardware revision, e.g. 009 (after a leading space)
+# ASCII, two characters per register, the LOW byte first. The indoor unit's fields are at fixed places:
+_IDU_FIELDS = {
     "idu_serial": (0x4052, 5),  # the indoor unit's serial number (its nameplate)
     "idu_product": (0x4057, 3),  # the indoor unit's product number
 }
+# The board's fields (0x4040-0x4051, 36 characters) were seen in two layouts:
+# * board 1A0058: a type character "0" + an 11-character barcode, FFFF FFFF, the part number, spaces, " 009";
+# * board 1A0040: a 10-character serial with the part number right after it, spaces, " 003", FFFF FFFF FFFF.
+# So the part number is read as the six characters before the run of spaces, the revision as the digits after it, and
+# the serial as the text before the part number (without the type character where a separator comes before the part).
+_BOARD_REGS = 18
+_PART_LEN = 6
 
 
 # Every unit-1 address that answered in a full scan of 0x4000-0x4FFF (2026-09-19, 1,877 registers): read for the
@@ -226,18 +232,38 @@ class Identity:
     idu_product: str | None = None
 
 
+def _text(regs: list[int]) -> str:
+    """The characters of some registers (low byte first); anything not printable becomes NUL."""
+    return "".join(chr(b) if 0x20 <= b < 0x7F else "\0" for reg in regs for b in (reg & 0xFF, reg >> 8))
+
+
+def _board_fields(text: str) -> dict[str, str | None]:
+    found: dict[str, str | None] = {"board_serial": None, "board_part": None, "board_revision": None}
+    spaces = re.search(r" {2,}", text)  # the padding after the part number
+    if spaces is None:
+        return found
+    head, tail = text[: spaces.start()], text[spaces.end() :]
+    revision = re.match(r"\d+", tail)
+    found["board_revision"] = revision.group(0) if revision else None
+    part = head[-_PART_LEN:]
+    if len(part) == _PART_LEN and "\0" not in part:
+        found["board_part"] = part
+        before = head[:-_PART_LEN]
+        if before.endswith("\0"):  # a separator before the part: the serial starts with a type character
+            before = before.rstrip("\0")[1:]
+        if before and "\0" not in before:
+            found["board_serial"] = before
+    return found
+
+
 def parse_identity(regs: list[int]) -> Identity:
     """Decode 0x4040..0x4059 (IDENTITY_COUNT registers)."""
     if len(regs) != IDENTITY_COUNT:
         raise ValueError(f"expected {IDENTITY_COUNT} registers, got {len(regs)}")
-    values: dict[str, str | None] = {}
-    for name, (address, count) in _IDENTITY_FIELDS.items():
-        chunk = regs[address - IDENTITY_ADDRESS : address - IDENTITY_ADDRESS + count]
-        data = bytes(b for reg in chunk for b in (reg & 0xFF, reg >> 8))
-        text = data.decode("ascii") if all(0x20 <= b < 0x7F for b in data) else None
-        if text is not None and name == "board_serial":
-            text = text[1:]  # the leading character is a length / type byte, not part of the printed barcode
-        values[name] = text.strip() or None if text is not None else None
+    values = _board_fields(_text(regs[:_BOARD_REGS]))
+    for name, (address, count) in _IDU_FIELDS.items():
+        text = _text(regs[address - IDENTITY_ADDRESS : address - IDENTITY_ADDRESS + count])
+        values[name] = text.strip() or None if "\0" not in text else None
     return Identity(**values)
 
 

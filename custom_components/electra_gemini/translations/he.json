@@ -176,6 +176,7 @@
           "stopped_shabbat": "נעצר: מצב שבת",
           "stopped_remote_mode": "נעצר: המצב שונה בשלט",
           "stopped_remote_ifeel": "נעצר: IFeel של השלט",
+          "stopped_ifeel_unsupported": "נעצר: IFeel דרך Modbus אינו נתמך",
           "stopped_value_not_kept": "נעצר: המזגן לא שמר את ערך ה-IFeel",
           "stopped_sensor_removed": "נעצר: חיישן החדר כבר לא זמין",
           "refused_no_slave1": "לא אפשרי: אין מעקב אחרי הסליל",

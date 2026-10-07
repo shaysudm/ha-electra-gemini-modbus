@@ -367,6 +367,29 @@ def test_parse_identity():
     )
 
 
+# The other layout (board 1A0040): a 10-character serial with the part number right after it, " 003" earlier, FFFF last
+IDENTITY_REGS_B = [
+    0x3141, 0x3332, 0x3534, 0x3736, 0x3938, 0x4131, 0x3030, 0x3034, 0x2020, 0x2020, 0x2020, 0x2020, 0x2020, 0x3020,
+    0x3330, 0xFFFF, 0xFFFF, 0xFFFF, 0x3231, 0x3433, 0x3635, 0x3837, 0x3039, 0x3538, 0x3835, 0x3637,
+]  # fmt: skip
+
+
+def test_parse_identity_other_layout():
+    from custom_components.electra_gemini.registers import Identity, parse_identity
+
+    assert parse_identity(IDENTITY_REGS_B) == Identity(
+        board_serial="A123456789", board_part="1A0040", board_revision="003", idu_serial="1234567890", idu_product="855876"
+    )
+
+
+def test_parse_identity_without_text_leaves_the_board_out():
+    from custom_components.electra_gemini.registers import parse_identity
+
+    identity = parse_identity([0xFFFF] * 18 + IDENTITY_REGS[18:])
+    assert (identity.board_serial, identity.board_part, identity.board_revision) == (None, None, None)
+    assert identity.idu_product == "857071"
+
+
 def test_parse_identity_leaves_out_a_field_that_is_not_text():
     from custom_components.electra_gemini.registers import parse_identity
 

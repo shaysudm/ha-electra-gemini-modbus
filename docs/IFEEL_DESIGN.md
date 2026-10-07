@@ -61,6 +61,9 @@ whole degrees) ends runs sooner than the remote's whole-degree IFeel.
    * **a mode change at the remote** (including turning the AC off or on): IFeel control **stops** (`stopped_remote_mode`),
      unless the setting "Keep IFeel control when the remote turns the AC off and on" covers it (see "Settings");
    * **the remote's own IFeel switched on:** IFeel control stops (`stopped_remote_ifeel`).
+   * **"The remote's IFeel" right after enabling, but not from the remote** (within 30 s of the enable, no infrared
+     frame, `0x3307` reading the value written while another value is in use): the board switched IFeel on but did not
+     take the Modbus value (seen on board 1A0040). IFeel control stops (`stopped_ifeel_unsupported`) with a notification.
 
    The integration's own settings writes are recognised as its own (they are announced before they are written), so they
    are not taken for remote use.
@@ -202,7 +205,7 @@ All in the integration's options ("Configure"), section "IFeel control" unless n
 * **Select "IFeel room sensor":** the sensor to use (rule 12).
 * **Sensor "IFeel control status":** `off`, `active`, `holding_start`, `coil_guard`, `run_cap`, `suspended_ac_off`,
   `suspended_fan`, `suspended_dry`, `suspended_shabbat`, `stopped_sensor`, `stopped_shabbat`, `stopped_remote_mode`,
-  `stopped_remote_ifeel`, `stopped_value_not_kept`, `stopped_sensor_removed`, `refused_no_slave1`,
+  `stopped_remote_ifeel`, `stopped_ifeel_unsupported`, `stopped_value_not_kept`, `stopped_sensor_removed`, `refused_no_slave1`,
   `refused_coil_fault`, `refused_auto`. Attributes: the decision and the value in use, the chosen sensor and its value,
   whether the override is in effect, the direction.
 * **Climate:** while IFeel control drives the unit, its current temperature is the room sensor's (attribute

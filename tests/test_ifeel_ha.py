@@ -295,6 +295,19 @@ async def test_a_failed_fast_read_does_not_make_the_ac_unavailable(hass, entry, 
     assert entry.runtime_data.last_update_success and state(hass, CLIMATE).state == "cool"
 
 
+async def test_a_board_without_modbus_ifeel_stops_with_a_notification(hass, entry, sim, notifications, monkeypatch):
+    monkeypatch.setattr(ifeel, "VERIFY_GRACE", 0.0)
+    sim.no_modbus_ifeel = True  # board 1A0040: IFeel goes on, but with the remote's source and cached value
+    coordinator = entry.runtime_data
+    await switch(hass, "turn_on")
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+    assert state(hass, STATUS).state == "stopped_ifeel_unsupported" and state(hass, SWITCH).state == STATE_OFF
+    assert [n for n, _ in notifications] == ["electra_gemini_ifeel_stopped"]
+    assert "Compatibility" in notifications[0][1]
+    assert not coordinator.debug.active
+
+
 async def test_an_explained_loss_is_recovered_with_a_warning_only(hass, entry, sim, notifications, monkeypatch, caplog):
     monkeypatch.setattr(ifeel, "VERIFY_GRACE", 0.0)
     coordinator = entry.runtime_data

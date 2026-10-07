@@ -59,6 +59,10 @@ NO_SLAVE1_RUN_MARGIN = 210.0  # without slave 1: the compressor may run this lon
 SAFE_COOLING, SAFE_HEATING = 16, 30  # rule 1: left behind before every switch-off
 CELLS_MAX_AGE = 30.0  # slave-1 cells older than this are not used for decisions
 OWN_SETTINGS_WINDOW = 30.0  # a settings change that matches the integration's own write within this time is its own
+# "The remote's IFeel" within this long of our enable, with no IR frame, 0x3307 reading our value and another value in
+# use: the board took the enable but not the value (board 1A0040, 2026-10-06), so IFeel over Modbus is not supported
+# there. The remote's own IFeel shows its value in 0x3307 too.
+UNSUPPORTED_WINDOW = 30.0
 SHABBAT_CLEANUP_TRIES = 5
 COIL_FAULT_CODES = (1, 3)  # IDU fault codes that may be the indoor coil sensor (ICT / RAT labels may be swapped)
 
@@ -76,6 +80,7 @@ STOPPED_SENSOR = "stopped_sensor"
 STOPPED_SHABBAT = "stopped_shabbat"
 STOPPED_REMOTE_MODE = "stopped_remote_mode"
 STOPPED_REMOTE_IFEEL = "stopped_remote_ifeel"
+STOPPED_IFEEL_UNSUPPORTED = "stopped_ifeel_unsupported"
 STOPPED_VALUE_NOT_KEPT = "stopped_value_not_kept"
 STOPPED_SENSOR_REMOVED = "stopped_sensor_removed"
 REFUSED_NO_SLAVE1 = "refused_no_slave1"
@@ -83,7 +88,8 @@ REFUSED_COIL_FAULT = "refused_coil_fault"
 REFUSED_AUTO = "refused_auto"
 STATUSES = [
     OFF, ACTIVE, HOLDING_START, COIL_GUARD, RUN_CAP, SUSPENDED_AC_OFF, SUSPENDED_FAN, SUSPENDED_DRY, SUSPENDED_SHABBAT,
-    STOPPED_SENSOR, STOPPED_SHABBAT, STOPPED_REMOTE_MODE, STOPPED_REMOTE_IFEEL, STOPPED_VALUE_NOT_KEPT,
+    STOPPED_SENSOR, STOPPED_SHABBAT, STOPPED_REMOTE_MODE, STOPPED_REMOTE_IFEEL, STOPPED_IFEEL_UNSUPPORTED,
+    STOPPED_VALUE_NOT_KEPT,
     STOPPED_SENSOR_REMOVED, REFUSED_NO_SLAVE1, REFUSED_COIL_FAULT, REFUSED_AUTO,
 ]  # fmt: skip
 
@@ -176,6 +182,7 @@ class IFeelController:
         self._value_at = -math.inf  # last write of a value (verification grace)
         self._new_at = -math.inf  # last new value (rule 2)
         self._keepalive_at = -math.inf  # last enable or keep-alive written
+        self._enabled_at = -math.inf  # last enable sequence
         self._force = False  # write the next new value at once (setpoint / mode change, hold ended)
         self._resync = False  # a write failed: run the enable sequence again
         self._mismatch = 0
@@ -531,6 +538,11 @@ class IFeelController:
                 obs, "remote press: take IFeel back"
             )
         if cells.ifeel_source == IFEEL_SOURCE_REMOTE:
+            if (
+                now - self._enabled_at <= UNSUPPORTED_WINDOW and not cells.marker
+                and obs.status.ifeel_temp == self.value_written != cells.mirror
+            ):  # fmt: skip
+                return self._stop(STOPPED_IFEEL_UNSUPPORTED, "the AC switched IFeel on but kept another temperature")
             return self._stop(STOPPED_REMOTE_IFEEL)
         if cells.ifeel_source != IFEEL_SOURCE_MODBUS:
             return None
@@ -830,6 +842,7 @@ class IFeelController:
         self._value_at = now + ENABLE_REPEAT_DELAY
         self._new_at = now
         self._keepalive_at = now
+        self._enabled_at = now
         self._mismatch = 0
         self._force = False
         self._shabbat_cleanup = 0  # IFeel is wanted on now

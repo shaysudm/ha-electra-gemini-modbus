@@ -62,6 +62,7 @@ class AcSimulator:
     cached_remote: int = 18
     last_modbus: int | None = None
     erase_values: bool = False  # every IFeel value written is dropped at once (an unexplained loss, for tests)
+    no_modbus_ifeel: bool = False  # like board 1A0040: IFeel goes on with the remote's source and cached value
     read_gap_limit: float | None = 2.5  # a Modbus IFeel value is dropped unless slave 160 is read in blocks this often
     last_block_read: float = 0.0
     value_at: float = 0.0
@@ -214,6 +215,10 @@ class AcSimulator:
             self._apply(address, values)
 
     def _ifeel_value(self, value: int) -> None:
+        if self.no_modbus_ifeel:
+            self.ifeel_active, self.ifeel_source, self.mirror = True, 0x1000, self.cached_remote
+            self.regs[0x3307] = value
+            return
         self._drop_check()
         self.value_at = time.monotonic()
         self.last_modbus = value

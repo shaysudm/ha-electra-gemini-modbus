@@ -199,6 +199,23 @@ def test_remote_ifeel_turns_ifeel_control_off():
     assert not h.ctrl.enabled and h.ctrl.status == ifeel.STOPPED_REMOTE_IFEEL
 
 
+def test_a_board_that_keeps_the_remote_value_is_not_supported():
+    h = Harness(room=24.6)
+    h.unit.no_modbus_ifeel = True  # board 1A0040: IFeel goes on, but with the remote's source and cached value
+    h.enable()
+    h.run(15)
+    assert not h.ctrl.enabled and h.ctrl.status == ifeel.STOPPED_IFEEL_UNSUPPORTED
+
+
+def test_remote_ifeel_soon_after_enabling_is_the_remote():
+    h = Harness(room=24.6)
+    h.enable()
+    h.run(5)
+    h.unit.remote_ifeel(25)  # 0x3307 shows the remote's value; the IR frame marker is gone by the next poll
+    h.run(10)
+    assert not h.ctrl.enabled and h.ctrl.status == ifeel.STOPPED_REMOTE_IFEEL
+
+
 def test_expiry_is_not_remote_use():
     h = Harness(IFeelConfig(keepalive=1000), room=24.3)  # keep-alives "missed"
     h.enable()

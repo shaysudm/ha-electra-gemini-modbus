@@ -51,6 +51,7 @@ from .const import (
 from .ifeel import (
     FAST_READ_INTERVAL,
     STOPPED_SENSOR,
+    STOPPED_IFEEL_UNSUPPORTED,
     STOPPED_VALUE_NOT_KEPT,
     Event,
     IFeelConfig,
@@ -626,6 +627,16 @@ class ElectraCoordinator(DataUpdateCoordinator[AcData]):
                     "sent by Home Assistant. The air conditioner is using its own temperature sensor. You can switch "
                     "IFeel control on again." + log,
                     title="AC: IFeel control stopped",
+                    notification_id=f"{DOMAIN}_{NOTIFY_STOPPED}",
+                )
+            elif event.data.get("status") == STOPPED_IFEEL_UNSUPPORTED:
+                persistent_notification.async_create(
+                    self.hass,
+                    "IFeel control was switched off: the air conditioner switched IFeel on, but kept using another "
+                    "temperature (the remote's) instead of the one sent by Home Assistant. This controller board may "
+                    "not support IFeel over Modbus (this was seen on board 1A0040). The rest of the integration works "
+                    "as usual. See \"Compatibility\" in the integration's README.",
+                    title="AC: IFeel control not supported",
                     notification_id=f"{DOMAIN}_{NOTIFY_STOPPED}",
                 )
         elif event.kind == "warning":

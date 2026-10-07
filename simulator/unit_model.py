@@ -81,6 +81,7 @@ class UnitModel:
         self.last_block_read = -1e9
         self.marker_until = -1e9
         self._shabbat_saved = False
+        self.no_modbus_ifeel = False  # like board 1A0040: IFeel goes on with the remote's source and cached value
         # compressor
         now = clock()
         self.running = False
@@ -178,6 +179,8 @@ class UnitModel:
         return self.running or self.clock() - self.last_stop < TIMER
 
     def reg_3307(self) -> int:
+        if self.no_modbus_ifeel and self.active and self.last_modbus is not None:
+            return self.last_modbus
         if self.active and self.source == 0x2000 and self.mirror != 0 and self.last_modbus is not None:
             return self.last_modbus
         return self.cached
@@ -257,6 +260,9 @@ class UnitModel:
             self.sleep = values[0] == 0x0A
 
     def _modbus_value(self, value: int, now: float, enable: bool) -> None:
+        if self.no_modbus_ifeel:  # 0x3307 echoes the value written
+            self.active, self.source, self.mirror, self.last_modbus = True, 0x1000, self.cached, value
+            return
         if enable:
             self.enabled_at = now
         self.active, self.source, self.mirror = True, 0x2000, value

@@ -176,6 +176,7 @@
           "stopped_shabbat": "Stopped: Shabbat mode",
           "stopped_remote_mode": "Stopped: mode changed at the remote",
           "stopped_remote_ifeel": "Stopped: the remote's IFeel",
+          "stopped_ifeel_unsupported": "Stopped: IFeel over Modbus not supported",
           "stopped_value_not_kept": "Stopped: IFeel value not kept",
           "stopped_sensor_removed": "Stopped: room sensor no longer available",
           "refused_no_slave1": "Not possible: coil cannot be watched",

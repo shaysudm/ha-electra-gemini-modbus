@@ -176,6 +176,7 @@
           "stopped_shabbat": "Остановлено: режим Шаббат",
           "stopped_remote_mode": "Остановлено: режим изменён с пульта",
           "stopped_remote_ifeel": "Остановлено: IFeel пульта",
+          "stopped_ifeel_unsupported": "Остановлено: IFeel через Modbus не поддерживается",
           "stopped_value_not_kept": "Остановлено: значение IFeel не сохраняется",
           "stopped_sensor_removed": "Остановлено: датчик комнаты больше не доступен",
           "refused_no_slave1": "Невозможно: нет контроля теплообменника",

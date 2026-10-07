@@ -260,7 +260,10 @@ Typical values: Standby `0x0204`; Cool idle `0x0304`, idle within 8 minutes of a
 ### Identity block
 
 `0x4040`-`0x4059` hold five identifiers as ASCII text, two characters per register, **the low byte of each register
-first**. They were matched against the controller board's sticker and the indoor unit's nameplate:
+first**. They were matched against the controller board's sticker and the indoor unit's nameplate. Two layouts of the
+board's part (`0x4040`-`0x4051`) are known; the indoor unit's fields are the same in both.
+
+Layout A (board 1A0058):
 
 | Registers | Contents | Example |
 |---|---|---|
@@ -272,7 +275,20 @@ first**. They were matched against the controller board's sticker and the indoor
 | `0x4052`-`0x4056` | The indoor unit's serial number | `0000000000` |
 | `0x4057`-`0x4059` | The indoor unit's product number | `857071` |
 
-The block needs two reads (26 registers). Nothing after `0x4059` decodes as text.
+Layout B (board 1A0040):
+
+| Registers | Contents | Example |
+|---|---|---|
+| `0x4040`-`0x4044` | The board's serial number (10 characters, no type character) | `0000000000` |
+| `0x4045`-`0x4047` | The board's part number | `1A0040` |
+| `0x4048`-`0x404C` | Padding | spaces |
+| `0x404D`-`0x404E` | One space, then the board's revision (on the board seen, `003` against `[004]` on its sticker) | ` 003` |
+| `0x404F`-`0x4051` | Not written | `0xFFFF` x 3 |
+| `0x4052`-`0x4059` | The indoor unit's serial and product numbers, as in layout A | `0000000000`, `855876` |
+
+In both, the part number is the 6 characters before the run of spaces and the revision the digits after it; the serial
+is the text before the part number (in layout A without its leading type character). The integration reads it that
+way. The block needs two reads (26 registers). Nothing after `0x4059` decodes as text.
 
 ## Example (pymodbus)
 

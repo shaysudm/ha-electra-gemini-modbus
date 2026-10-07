@@ -63,6 +63,19 @@ The integration speaks Modbus TCP (MBAP framing) only, so a transparent "raw TCP
 the client, will not work. **Other gateways are untested**, apart from a Waveshare RS485 to WIFI/ETH adapter that was
 tried: communication through it was unreliable with the settings used; this was not investigated further.
 
+## Compatibility
+
+Developed and tested on one unit: controller board (GEMINI IDU) **1A0058**, revision 009, indoor unit 857071. Everything
+in this README was tested there.
+
+Also tried on board **1A0040** (revision 004 on its sticker), indoor unit 855876: the climate entity and the sensors
+worked, but **IFeel control did not**. The board switched IFeel on, but kept using the remote's last temperature instead
+of the one written over Modbus. The integration recognises this, switches IFeel control off (status "Stopped: IFeel over
+Modbus not supported") and shows a notification. That unit also showed IDU fault 8 throughout, for an unknown reason.
+
+Other boards are untested. The device page shows the board's part number (model ID) and revision (hardware version).
+If you try another board, please report how it went (see "Reporting a problem").
+
 ## Entities
 
 <p align="center">
@@ -224,7 +237,7 @@ The integration always keeps the last 30 minutes of what it read and wrote in me
    **Download diagnostics**. Besides the settings and IFeel control's state, the file holds those 30 minutes (the
    registers read, every write and its reason, every request and whether a user, an automation or a script made it,
    refusals, IFeel control's decisions and events, connection events) and a snapshot of every register of the board's
-   unit 1, read when you download it (read only; about 10-20 seconds).
+   unit 1, read when you download it (read only; it can take up to a minute).
 2. Open an issue on GitHub ("Problem report") and attach the file. The form asks a few things only you can check, such
    as the DIP switch J2 and whether a wall controller or an infrared device is around.
 
@@ -234,7 +247,7 @@ The gateway address, the serial numbers and user names are left out of the file.
 
 ```
 pip install pytest-homeassistant-custom-component
-pytest                                 # 278 tests (see below)
+pytest                                 # 288 tests (see below)
 python simulator/ac_simulator.py       # the simulated unit as a TCP server on 127.0.0.1:8899
 python tools/poll_real_ac.py HOST      # read-only poll of the real AC
 ```

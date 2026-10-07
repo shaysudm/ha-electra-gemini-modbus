@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.4
+
+* **Boards that do not take IFeel over Modbus:** when the AC switches IFeel on but keeps using another temperature
+  right after IFeel control is switched on (seen on board 1A0040), IFeel control now stops with the status "Stopped:
+  IFeel over Modbus not supported" and a notification, instead of "Stopped: the remote's IFeel".
+* The device page also shows the part number and revision of boards that store them in another layout (board 1A0040).
+* README: a "Compatibility" section, and "Download diagnostics" can take up to a minute.
+
 ## 0.6.3
 
 * **Diagnostics for problem reports:** "Download diagnostics" now includes the last 30 minutes of what the integration
