@@ -6,6 +6,8 @@
   right after IFeel control is switched on (seen on board 1A0040), IFeel control now stops with the status "Stopped:
   IFeel over Modbus not supported" and a notification, instead of "Stopped: the remote's IFeel".
 * The device page also shows the part number and revision of boards that store them in another layout (board 1A0040).
+* Diagnostics: the copy of the board's serial number in the live cells (`0x4813`-`0x481A`) is now masked too. Before,
+  the unit-1 snapshot showed it there.
 * README: a "Compatibility" section, and "Download diagnostics" can take up to a minute.
 
 ## 0.6.3

@@ -292,7 +292,7 @@ class ElectraCoordinator(DataUpdateCoordinator[AcData]):
                 address += count
         return {
             "ranges": [f"0x{first:04X}-0x{last:04X}" for first, last in SNAPSHOT_RANGES],
-            "masked": "serial-number characters (0x4040-0x4045, 0x4052-0x4056) are null",
+            "masked": "serial-number characters (0x4040-0x4045, 0x4052-0x4056, 0x4813-0x481A) are null",
             "duration_s": round(time.monotonic() - started, 1),
             "blocks": blocks,
         }

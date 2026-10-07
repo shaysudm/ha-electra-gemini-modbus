@@ -158,6 +158,8 @@ class AcSimulator:
             for a in (0x4850, 0x4851, 0x4852):
                 cells[a] = (0x4828, 0, 0x4001)[a - 0x4850] if marker else 0xFFFF
             cells |= IDENTITY  # the identity block as logged on the real unit
+            # its copy in the live cells: 0x4040-0x4047, with 0xFFFF read as 0
+            cells |= {0x4813 + i: 0 if v == 0xFFFF else v for i, v in enumerate(IDENTITY[a] for a in range(0x4040, 0x4048))}
             cells |= self.internal_cells
             # filler as on the real unit: 0xFFFF in the erased area 0x40D9-0x444B, 0 elsewhere
             return [cells.get(a, 0xFFFF if 0x40D9 <= a <= 0x444B else 0) for a in range(address, address + count)]

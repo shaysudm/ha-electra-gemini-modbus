@@ -227,7 +227,8 @@ async def test_diagnostics(hass, entry):
     values = {int(b["address"], 16) + i: v for b in snap["blocks"] for i, v in enumerate(b.get("values", []))}
     assert not [b for b in snap["blocks"] if "error" in b]
     assert len(values) == 1877
-    assert all(values[a] is None for a in list(range(0x4040, 0x4046)) + list(range(0x4052, 0x4057)))
+    serials = list(range(0x4040, 0x4046)) + list(range(0x4052, 0x4057)) + list(range(0x4813, 0x481B))
+    assert all(values[a] is None for a in serials)  # incl. the live cells' copy of the board serial
     assert values[0x4048] == 0x4131  # the part number stays ("1A")
     assert values[0x4801] == 0x0800 and values[0x40D9] == 0xFFFF
 

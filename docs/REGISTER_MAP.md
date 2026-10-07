@@ -290,6 +290,9 @@ In both, the part number is the 6 characters before the run of spaces and the re
 is the text before the part number (in layout A without its leading type character). The integration reads it that
 way. The block needs two reads (26 registers). Nothing after `0x4059` decodes as text.
 
+The live cells `0x4813`-`0x481A` repeat `0x4040`-`0x4047` (`0xFFFF` read as `0`), so they hold the board's serial number
+too (and in layout B the first characters of the part number).
+
 ## Example (pymodbus)
 
 ```python

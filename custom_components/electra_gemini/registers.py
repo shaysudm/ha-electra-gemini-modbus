@@ -216,9 +216,11 @@ _PART_LEN = 6
 # Every unit-1 address that answered in a full scan of 0x4000-0x4FFF (2026-09-19, 1,877 registers): read for the
 # diagnostics snapshot only.
 SNAPSHOT_RANGES = ((0x4000, 0x46FF), (0x47FF, 0x4853))
-# Identity characters that are serial numbers (the board's barcode with its type character, the indoor unit's serial):
-# masked in diagnostics.
-SERIAL_ADDRESSES = frozenset(range(0x4040, 0x4046)) | frozenset(range(0x4052, 0x4057))
+# Characters that are serial numbers, masked in diagnostics: the board's barcode with its type character, the indoor
+# unit's serial, and the live cells' copy of 0x4040-0x4047 (0x4813-0x481A; on board 1A0040 it holds the serial too).
+SERIAL_ADDRESSES = (
+    frozenset(range(0x4040, 0x4046)) | frozenset(range(0x4052, 0x4057)) | frozenset(range(0x4813, 0x481B))
+)
 
 
 @dataclass(frozen=True)
